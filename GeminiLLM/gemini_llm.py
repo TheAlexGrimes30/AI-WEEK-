@@ -9,21 +9,72 @@ load_dotenv()
 
 
 class LLMBase(ABC):
+    """
+    Базовый абстрактный класс для всех LLM-провайдеров.
+
+    Атрибуты:
+        name (str): Имя модели.
+    """
+
     def __init__(self, name: str):
+        """
+        Инициализация базового класса LLM.
+
+        Args:
+            name (str): Имя текущей модели.
+        """
+
         self.name = name
 
     @abstractmethod
     def generate(self, prompt: str) -> str:
+        """
+        Абстрактный метод генерации текста.
+
+        Args:
+            prompt (str): Текстовый запрос.
+
+        Returns:
+            str: Сгенерированный текст.
+        """
+
         pass
 
 
-class GeminiProvider(LLMBase):
+class GeminiLLM(LLMBase):
+    """
+    Модель Google Gemini, реализующий интерфейс LLMBase.
+
+    Атрибуты:
+        api_key (str): API-ключ Gemini.
+        model (str): Используемая модель.
+        client (genai.Client): Клиент Gemini SDK.
+    """
+
     def __init__(self, api_key: str, model: str = "gemini-2.5-flash"):
+        """
+        Инициализация провайдера Gemini.
+
+        Args:
+            api_key (str): API-ключ для доступа к Gemini.
+            model (str, optional): Модель Gemini. Defaults to "gemini-2.5-flash".
+        """
+
         super().__init__(name=f"Gemini ({model})")
         self.client = genai.Client(api_key=api_key)
         self.model = model
 
     def generate(self, prompt: str) -> str:
+        """
+        Генерация текста через API Gemini.
+
+        Args:
+            prompt (str): Запрос для генерации.
+
+        Returns:
+            str: Ответ модели.
+        """
+
         response = self.client.models.generate_content(
             model=self.model,
             contents=prompt
@@ -34,6 +85,18 @@ class GeminiProvider(LLMBase):
 MAX_RETRIES = 5
 
 def safe_generate(model: LLMBase, prompt: str):
+    """
+    Безопасная генерация с повторными попытками при ошибках.
+    Используется экспоненциальная задержка.
+
+    Args:
+        model (LLMBase): Экземпляр модели.
+        prompt (str): Запрос для генерации.
+
+    Returns:
+        str | None: Текст ответа или None при провале.
+    """
+
     for attempt in range(MAX_RETRIES):
         try:
             return model.generate(prompt)
@@ -44,7 +107,18 @@ def safe_generate(model: LLMBase, prompt: str):
     return None
 
 
-def generate_projects(models: List[LLMBase], ideas: List[str]):
+def generate_projects(models: List[LLMBase], ideas: List[str]) -> dict:
+    """
+    Генерация технических описаний проектов по списку идей.
+
+    Args:
+        models (List[LLMBase]): Список моделей для генерации.
+        ideas (List[str]): Список идей AI-проектов.
+
+    Returns:
+        dict: Структурированный результат генерации.
+    """
+
     improved_prompt = (
         "Ты — опытный ML-архитектор и инженер. "
         "На вход приходит идея AI-проекта. Сгенерируй развернутое техническое описание, "
@@ -103,6 +177,16 @@ def generate_projects(models: List[LLMBase], ideas: List[str]):
     return results
 
 def generate_ai_ideas(model: LLMBase, count: int = 10) -> List[str]:
+    """
+    Генерация списка идей AI-проектов.
+
+    Args:
+        model (LLMBase): Модель для генерации.
+        count (int, optional): Количество идей. Defaults to 10.
+
+    Returns:
+        List[str]: Список идей.
+    """
 
     idea_prompt = (
         "Ты — эксперт по генерации AI-проектов.\n"
@@ -150,7 +234,7 @@ def generate_ai_ideas(model: LLMBase, count: int = 10) -> List[str]:
 
 if __name__ == "__main__":
     gemini_api_key = os.getenv("GEMINI_API_KEY")
-    gemini_model = GeminiProvider(api_key=gemini_api_key)
+    gemini_model = GeminiLLM(api_key=gemini_api_key)
 
     ai_ideas = generate_ai_ideas(gemini_model, count=10)
 
