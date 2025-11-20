@@ -1,4 +1,5 @@
 import os
+from abc import ABC, abstractmethod
 from typing import List, Dict, Any
 
 import requests
@@ -120,6 +121,7 @@ def generate_and_print_projects(client: YandexLLM, ai_ideas: List[str]) -> None:
             print(f"{header}\n{content}\n")
             start = next_pos
         print("="*60)
+
 
 if __name__ == "__main__":
     yandex_api_key = os.getenv("YANDEX_API_KEY")

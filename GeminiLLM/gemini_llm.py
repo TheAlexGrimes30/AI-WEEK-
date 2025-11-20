@@ -8,7 +8,7 @@ import google.genai as genai
 load_dotenv()
 
 
-class AIProvider(ABC):
+class LLMBase(ABC):
     def __init__(self, name: str):
         self.name = name
 
@@ -17,7 +17,7 @@ class AIProvider(ABC):
         pass
 
 
-class GeminiProvider(AIProvider):
+class GeminiProvider(LLMBase):
     def __init__(self, api_key: str, model: str = "gemini-2.5-flash"):
         super().__init__(name=f"Gemini ({model})")
         self.client = genai.Client(api_key=api_key)
@@ -33,7 +33,7 @@ class GeminiProvider(AIProvider):
 
 MAX_RETRIES = 5
 
-def safe_generate(model: AIProvider, prompt: str):
+def safe_generate(model: LLMBase, prompt: str):
     for attempt in range(MAX_RETRIES):
         try:
             return model.generate(prompt)
@@ -44,27 +44,29 @@ def safe_generate(model: AIProvider, prompt: str):
     return None
 
 
-def generate_projects(models: List[AIProvider], ideas: List[str]):
+def generate_projects(models: List[LLMBase], ideas: List[str]):
     improved_prompt = (
         "Ты — опытный ML-архитектор и инженер. "
         "На вход приходит идея AI-проекта. Сгенерируй развернутое техническое описание, "
         "список необходимых технологий и библиотек, основные этапы реализации (3–5 пунктов) "
         "и оценку сложности (легко/средне/сложно). "
-        "Выводи каждый раздел с заголовком для удобного чтения:\n\n"
+        "Выводи каждый раздел с заголовком для удобного чтения.\n\n"
         "Техническое описание:\n<текст>\n\n"
         "Необходимые технологии и библиотеки:\n- технология 1\n- технология 2\n...\n\n"
         "Этапы реализации:\n1. этап 1\n2. этап 2\n...\n\n"
         "Оценка сложности:\n<легко/средне/сложно>\n\n"
-        "Старайся давать конкретные, логичные и практичные рекомендации."
+        "Пиши строго на русском."
     )
 
     results = {}
 
     for idx, idea in enumerate(ideas, start=1):
-        prompt = f"{improved_prompt}\n\nИдея проекта: {idea}"
-        print(f"\n{'='*60}")
+
+        print("\n" + "=" * 60)
         print(f"Проект #{idx}")
         print(f"Идея: {idea}\n")
+
+        prompt = f"{improved_prompt}\n\nИдея проекта: {idea}"
 
         results[idx] = {}
 
@@ -74,35 +76,56 @@ def generate_projects(models: List[AIProvider], ideas: List[str]):
                 text = "Не удалось сгенерировать ответ после нескольких попыток."
             results[idx][model.name] = text
 
-            sections = ["Техническое описание:", "Необходимые технологии и библиотеки:",
-                        "Этапы реализации:", "Оценка сложности:"]
+            sections = [
+                "Техническое описание:",
+                "Необходимые технологии и библиотеки:",
+                "Этапы реализации:",
+                "Оценка сложности:"
+            ]
+
             start = 0
             for i, header in enumerate(sections):
                 pos = text.find(header, start)
                 if pos == -1:
                     continue
+
                 next_pos = len(text)
                 if i + 1 < len(sections):
                     next_pos = text.find(sections[i + 1], pos)
                     if next_pos == -1:
                         next_pos = len(text)
+
                 content = text[pos + len(header):next_pos].strip()
                 print(f"{header}\n{content}\n")
+
                 start = next_pos
-            print("="*60)
 
     return results
 
+def generate_ai_ideas(model: LLMBase, count: int = 10) -> List[str]:
+
+    idea_prompt = (
+        "Ты — эксперт по генерации AI-проектов.\n"
+        f"Сгенерируй {count} кратких идей AI-проектов. "
+        "Каждая идея — 2–3 предложения.\n"
+        "Формат: список строк, по одной идее в строке.\n"
+        "Не нумеровать. Не использовать маркеры типа '-' или '•'.\n"
+        "Просто строки текста, одна идея — одна строка."
+    )
+
+    raw = safe_generate(model, idea_prompt)
+
+    if raw is None:
+        return []
+
+    ideas = [line.strip() for line in raw.split("\n") if line.strip()]
+    return ideas
 
 if __name__ == "__main__":
     gemini_api_key = os.getenv("GEMINI_API_KEY")
     gemini_model = GeminiProvider(api_key=gemini_api_key)
 
-    ai_ideas = [
-        "AI-система для автоматического анализа и классификации отзывов клиентов.",
-        "Рекомендательная система для подбора образовательных курсов.",
-        "AI-помощник для генерации планов тренировок с учетом физической формы пользователя."
-    ]
+    ai_ideas = generate_ai_ideas(gemini_model, count=10)
 
     models = [gemini_model]
 
