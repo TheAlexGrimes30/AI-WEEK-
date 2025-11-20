@@ -106,20 +106,47 @@ def generate_ai_ideas(model: LLMBase, count: int = 10) -> List[str]:
 
     idea_prompt = (
         "Ты — эксперт по генерации AI-проектов.\n"
-        f"Сгенерируй {count} кратких идей AI-проектов. "
+        f"Сгенерируй ровно {count} кратких идей AI-проектов на русском языке.\n"
         "Каждая идея — 2–3 предложения.\n"
-        "Формат: список строк, по одной идее в строке.\n"
-        "Не нумеровать. Не использовать маркеры типа '-' или '•'.\n"
-        "Просто строки текста, одна идея — одна строка."
+        "Формат вывода строго такой:\n"
+        "ИДЕЯ 1: <текст>\n"
+        "ИДЕЯ 2: <текст>\n"
+        "... до нужного количества.\n\n"
+        "Важно:\n"
+        "- не использовать списки, маркеры, тире\n"
+        "- одна идея = одна строка\n"
+        "- все строки должны начинаться с 'ИДЕЯ X:'\n"
+        "- не пропускай номера"
     )
 
     raw = safe_generate(model, idea_prompt)
-
     if raw is None:
         return []
 
-    ideas = [line.strip() for line in raw.split("\n") if line.strip()]
-    return ideas
+    ideas = []
+
+    for line in raw.split("\n"):
+        if line.startswith("ИДЕЯ "):
+            idea_text = line.split(":", 1)[1].strip()
+            if idea_text:
+                ideas.append(idea_text)
+
+    if len(ideas) < count:
+        missing = count - len(ideas)
+        print(f"⚠ Gemini сгенерировал только {len(ideas)} идей. Догенерируем ещё {missing}...")
+
+        extra_prompt = (
+            f"Сгенерируй ещё {missing} идей.\n"
+            "Формат:\n"
+            "ИДЕЯ: <текст>"
+        )
+
+        extra_raw = safe_generate(model, extra_prompt)
+        for line in (extra_raw or "").split("\n"):
+            if "ИДЕЯ:" in line:
+                ideas.append(line.split(":", 1)[1].strip())
+
+    return ideas[:count]
 
 if __name__ == "__main__":
     gemini_api_key = os.getenv("GEMINI_API_KEY")
