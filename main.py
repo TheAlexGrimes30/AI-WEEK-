@@ -7,7 +7,26 @@ from dotenv import load_dotenv
 load_dotenv()
 
 class YandexLLM:
+    """
+    Класс для работы с Yandex LLM через API.
+
+    Атрибуты:
+        yandex_api_key (str): API-ключ для доступа к Yandex LLM.
+        yandex_model_uri (str): URI модели LLM (по умолчанию из переменной окружения YANDEX_URI).
+        yandex_url (str): URL для обращения к API.
+        headers (dict): HTTP-заголовки для запроса, включая авторизацию.
+    """
+
     def __init__(self, yandex_api_key: str, yandex_model_uri: str = os.getenv("YANDEX_URI")):
+        """
+        Конструктор класса YandexLLM.
+
+        Args:
+            yandex_api_key (str): API-ключ для доступа к Yandex LLM.
+            yandex_model_uri (str, optional): URI модели LLM.
+                По умолчанию берется из переменной окружения YANDEX_URI.
+        """
+
         self.yandex_api_key = yandex_api_key
         self.yandex_model_uri = yandex_model_uri
         self.yandex_url = os.getenv("YANDEX_URL")
@@ -18,6 +37,18 @@ class YandexLLM:
 
     def generate(self, messages: List[Dict[str, Any]], temperature: float = 0.6,
                  max_tokens: int = 2000, stream: bool = False) -> Dict[str, Any]:
+        """
+        Метод для генерации текста с помощью Yandex LLM.
+
+        Args:
+            messages (List[Dict[str, Any]]): Список сообщений для модели.
+            temperature (float, optional): Параметр "температуры" для креативности ответа.
+            max_tokens (int, optional): Максимальное количество токенов в ответе.
+            stream (bool, optional): Если True, позволяет получать ответ потоково.
+
+        Returns:
+            Dict[str, Any]: JSON-ответ от API в виде словаря Python.
+        """
 
         payload = {
             "modelUri": self.yandex_model_uri,
@@ -33,18 +64,21 @@ class YandexLLM:
         response.raise_for_status()
         return response.json()
 
-if __name__ == "__main__":
-    yandex_api_key = os.getenv("YANDEX_API_KEY")
-    client = YandexLLM(yandex_api_key)
+def generate_and_print_projects(client: YandexLLM, ai_ideas: List[str]) -> None:
+    """
+    Функция для генерации развернутых технических описаний AI-проектов
+    и красивого вывода в консоль.
 
-    idea_prompt = [
-        {"role": "system", "text": "Ты — эксперт по генерации AI-проектов."},
-        {"role": "user", "text": "Сгенерируй 8–10 кратких идей AI-проектов. Каждая — 2–3 предложения. "
-                                 "Формат: список строк, по одному проекту в строке."}
-    ]
-    idea_result = client.generate(idea_prompt)
-    raw_text = idea_result["result"]["alternatives"][0]["message"]["text"]
-    ai_ideas = [line.lstrip("-• ").strip() for line in raw_text.split("\n") if line.strip()]
+    Args:
+        client (YandexLLM): Экземпляр класса для работы с Yandex LLM.
+        ai_ideas (List[str]): Список кратких идей AI-проектов.
+
+    Действия:
+        - Создает улучшенный системный промпт для модели.
+        - Для каждой идеи генерирует развернутое техническое описание,
+            список технологий, этапы реализации и оценку сложности.
+        - Выводит результат в консоль с четким разделением на заголовки.
+    """
 
     improved_prompt = (
         "Ты — опытный ML-архитектор и инженер. "
@@ -86,3 +120,18 @@ if __name__ == "__main__":
             print(f"{header}\n{content}\n")
             start = next_pos
         print("="*60)
+
+if __name__ == "__main__":
+    yandex_api_key = os.getenv("YANDEX_API_KEY")
+    client = YandexLLM(yandex_api_key)
+
+    idea_prompt = [
+        {"role": "system", "text": "Ты — эксперт по генерации AI-проектов."},
+        {"role": "user", "text": "Сгенерируй 8–10 кратких идей AI-проектов. Каждая — 2–3 предложения. "
+                                 "Формат: список строк, по одному проекту в строке."}
+    ]
+    idea_result = client.generate(idea_prompt)
+    raw_text = idea_result["result"]["alternatives"][0]["message"]["text"]
+    ai_ideas = [line.lstrip("-• ").strip() for line in raw_text.split("\n") if line.strip()]
+
+    generate_and_print_projects(client, ai_ideas)
