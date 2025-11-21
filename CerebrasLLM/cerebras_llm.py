@@ -1,11 +1,56 @@
 import os
+from abc import ABC, abstractmethod
+
 from cerebras.cloud.sdk import Cerebras
 from dotenv import load_dotenv
 import re
 
 load_dotenv()
 
-class CerebrasLLM:
+class CerebrasBase(ABC):
+    """
+    Базовый абстрактный класс для всех CerebrasLLM.
+
+    Атрибуты:
+        api_key (str, optional): API-ключ.
+        model (str, optional): Модель для генерации текста.
+    """
+
+    def __init__(self, api_key: str, model: str):
+        """
+        Инициализация базового класса GeminiLLM.
+
+        Args:
+            api_key (str, optional): API-ключ.
+            model (str, optional): Модель для генерации текста.
+        """
+
+        self.api_key = api_key
+        self.model = model
+
+    @abstractmethod
+    def generate(self, prompt: str,
+                 max_tokens: int,
+                 temperature: float,
+                 top_p: float,
+                 stream: bool) -> str:
+        """
+        Абстрактный метод генерации текста.
+
+        Args:
+            prompt (str): Текст запроса для модели.
+            max_tokens (int, optional): Максимальное количество токенов в ответе.
+            temperature (float, optional): Параметр креативности генерации.
+            top_p (float, optional): Параметр сэмплирования.
+            stream (bool, optional): Если True, возвращает текст по частям (streaming).
+
+        Returns:
+            str: Сгенерированный текст.
+        """
+
+        pass
+
+class CerebrasLLM(CerebrasBase):
     """
     Класс для работы с LLM от Cerebras через облачный API.
 
@@ -24,6 +69,7 @@ class CerebrasLLM:
             model (str, optional): Модель для генерации текста. Defaults to "llama-3.3-70b".
         """
 
+        super().__init__(api_key, model)
         self.api_key = api_key or os.getenv("CEREBRAS_API_KEY")
         self.model = model
         self.client = Cerebras(api_key=self.api_key)

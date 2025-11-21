@@ -12,7 +12,8 @@ class YandexBase(ABC):
     Базовый абстрактный класс для всех GeminiLLM.
 
     Атрибуты:
-        name (str): Имя модели.
+        yandex_api_key (str): API KEY YandexLLM.
+        yandex_model_uri (str): URI YandexLLM.
     """
 
     def __init__(self, yandex_api_key: str, yandex_model_uri: str):
