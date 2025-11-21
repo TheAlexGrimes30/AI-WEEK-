@@ -37,10 +37,6 @@ class CerebrasLLM:
             return completion.choices[0].message.content
 
 def pretty_print_projects(text: str):
-    """
-    Красиво выводит проекты с нумерацией от 1 до 10,
-    учитывая только реально существующие проекты.
-    """
     sections = [
         "Техническое описание:",
         "Необходимые технологии и библиотеки:",
