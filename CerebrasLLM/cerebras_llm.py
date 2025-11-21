@@ -4,17 +4,30 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-client = Cerebras(
-    api_key=os.getenv("CEREBRAS_API_KEY")
-)
 
-completion = client.chat.completions.create(
-    messages=[{"role":"user","content":"Why is fast inference important?"}],
-    model="llama-3.3-70b",
-    max_completion_tokens=1024,
-    temperature=0.2,
-    top_p=1,
-    stream=False
-)
+class CerebrasLLM:
+    def __init__(self, api_key: str = None, model: str = "llama-3.3-70b"):
+        self.api_key = api_key or os.getenv("CEREBRAS_API_KEY")
+        self.model = model
+        self.client = Cerebras(api_key=self.api_key)
 
-print(completion.choices[0].message.content)
+    def generate(self, prompt: str,
+                 max_tokens: int = 2000,
+                 temperature: float = 0.6,
+                 top_p: float = 1.0) -> str:
+
+        completion = self.client.chat.completions.create(
+            messages=[{"role": "user", "content": prompt}],
+            model=self.model,
+            max_completion_tokens=max_tokens,
+            temperature=temperature,
+            top_p=top_p,
+            stream=False
+        )
+
+        return completion.choices[0].message.content
+
+llm = CerebrasLLM()
+
+answer = llm.generate("Explain fast inference in simple words")
+print(answer)
