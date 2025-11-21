@@ -1,7 +1,6 @@
 import os
 from cerebras.cloud.sdk import Cerebras
 from dotenv import load_dotenv
-import re
 
 load_dotenv()
 
@@ -13,9 +12,10 @@ class CerebrasLLM:
         self.client = Cerebras(api_key=self.api_key)
 
     def generate(self, prompt: str,
-                 max_tokens: int = 2000,
-                 temperature: float = 0.6,
-                 top_p: float = 1.0) -> str:
+                 max_tokens: int = 8000,
+                 temperature: float = 0.4,
+                 top_p: float = 1.0,
+                 stream: bool = True) -> str:
 
         completion = self.client.chat.completions.create(
             messages=[{"role": "user", "content": prompt}],
@@ -23,16 +23,21 @@ class CerebrasLLM:
             max_completion_tokens=max_tokens,
             temperature=temperature,
             top_p=top_p,
-            stream=False
+            stream=stream
         )
 
-        return completion.choices[0].message.content
+        if stream:
+            text = ""
+            for chunk in completion:
+                delta_content = getattr(getattr(chunk.choices[0], "delta", None), "content", None)
+                if delta_content:
+                    text += delta_content
+            return text
+        else:
+            return completion.choices[0].message.content
 
 
-def pretty_print_ai_projects(raw_text: str):
-    projects = re.split(r"ИДЕЯ \d+:", raw_text)
-    projects = [p.strip() for p in projects if p.strip()]
-
+def pretty_print_projects(text: str):
     sections = [
         "Техническое описание:",
         "Необходимые технологии и библиотеки:",
@@ -40,26 +45,26 @@ def pretty_print_ai_projects(raw_text: str):
         "Оценка сложности:"
     ]
 
-    for idx, proj_text in enumerate(projects, start=1):
-        print("\n" + "=" * 60)
-        print(f"Проект #{idx}\n")
+    projects = text.split("ИДЕЯ ")
+    for idx, proj in enumerate(projects[1:], 1):
+        proj_text = proj.split(":", 1)[1].strip() if ":" in proj else proj.strip()
+        print("\n" + "="*70)
+        print(f"Проект #{idx}")
+        print("="*70 + "\n")
 
         start = 0
         for i, header in enumerate(sections):
             pos = proj_text.find(header, start)
             if pos == -1:
                 continue
-
             next_pos = len(proj_text)
             if i + 1 < len(sections):
-                next_pos_tmp = proj_text.find(sections[i + 1], pos)
-                if next_pos_tmp != -1:
-                    next_pos = next_pos_tmp
-
+                next_pos = proj_text.find(sections[i+1], pos)
+                if next_pos == -1:
+                    next_pos = len(proj_text)
             content = proj_text[pos + len(header):next_pos].strip()
             print(f"{header}\n{content}\n")
             start = next_pos
-        print("=" * 60)
 
 
 if __name__ == "__main__":
@@ -81,11 +86,6 @@ if __name__ == "__main__":
         "ИДЕЯ 8: <текст>\n"
         "ИДЕЯ 9: <текст>\n"
         "ИДЕЯ 10: <текст>\n\n"
-        "Важно:\n"
-        "- не использовать списки, маркеры, тире\n"
-        "- одна идея = одна строка\n"
-        "- все строки должны начинаться с 'ИДЕЯ X:'\n"
-        "- не пропускай номера\n\n"
         "2) Для каждой идеи создай развернутое техническое описание проекта с разделами:\n"
         "Техническое описание:\n<текст>\n\n"
         "Необходимые технологии и библиотеки:\n- технология 1\n- технология 2\n...\n\n"
@@ -99,5 +99,5 @@ if __name__ == "__main__":
         "Сначала выведи 10 идей, затем последовательно развернутое описание каждого проекта."
     )
 
-    raw_answer = llm.generate(prompt)
-    pretty_print_ai_projects(raw_answer)
+    answer = llm.generate(prompt)
+    pretty_print_projects(answer)
