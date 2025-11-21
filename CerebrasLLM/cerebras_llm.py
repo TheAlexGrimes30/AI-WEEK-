@@ -1,9 +1,9 @@
 import os
 from cerebras.cloud.sdk import Cerebras
 from dotenv import load_dotenv
+import re
 
 load_dotenv()
-
 
 class CerebrasLLM:
     def __init__(self, api_key: str = None, model: str = "llama-3.3-70b"):
@@ -36,8 +36,11 @@ class CerebrasLLM:
         else:
             return completion.choices[0].message.content
 
-
 def pretty_print_projects(text: str):
+    """
+    Красиво выводит проекты с нумерацией от 1 до 10,
+    учитывая только реально существующие проекты.
+    """
     sections = [
         "Техническое описание:",
         "Необходимые технологии и библиотеки:",
@@ -45,25 +48,35 @@ def pretty_print_projects(text: str):
         "Оценка сложности:"
     ]
 
-    projects = text.split("ИДЕЯ ")
-    for idx, proj in enumerate(projects[1:], 1):
-        proj_text = proj.split(":", 1)[1].strip() if ":" in proj else proj.strip()
+    matches = re.finditer(r"ИДЕЯ (\d+):", text)
+    project_positions = [(int(m.group(1)), m.start()) for m in matches]
+
+    project_positions = [p for p in project_positions if 1 <= p[0] <= 10]
+
+    for i, (proj_num, start_pos) in enumerate(project_positions):
+        end_pos = project_positions[i + 1][1] if i + 1 < len(project_positions) else len(text)
+        proj_text = text[start_pos:end_pos].strip()
+
+        if not proj_text or proj_text == f"ИДЕЯ {proj_num}:":
+            continue
+
         print("\n" + "="*70)
-        print(f"Проект #{idx}")
+        print(f"Проект #{proj_num}")
         print("="*70 + "\n")
 
         start = 0
-        for i, header in enumerate(sections):
+        for j, header in enumerate(sections):
             pos = proj_text.find(header, start)
             if pos == -1:
                 continue
             next_pos = len(proj_text)
-            if i + 1 < len(sections):
-                next_pos = proj_text.find(sections[i+1], pos)
+            if j + 1 < len(sections):
+                next_pos = proj_text.find(sections[j+1], pos)
                 if next_pos == -1:
                     next_pos = len(proj_text)
             content = proj_text[pos + len(header):next_pos].strip()
-            print(f"{header}\n{content}\n")
+            if content:
+                print(f"{header}\n{content}\n")
             start = next_pos
 
 
