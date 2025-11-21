@@ -1,4 +1,5 @@
 import os
+from abc import ABC, abstractmethod
 from typing import List, Dict, Any
 
 import requests
@@ -6,7 +7,44 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-class YandexLLM:
+class YandexBase(ABC):
+    """
+    Базовый абстрактный класс для всех GeminiLLM.
+
+    Атрибуты:
+        name (str): Имя модели.
+    """
+
+    def __init__(self, yandex_api_key: str, yandex_model_uri: str):
+        """
+        Инициализация базового класса GeminiLLM.
+
+        Args:
+            yandex_api_key (str): API KEY YandexLLM.
+            yandex_model_uri (str): URI YandexLLM.
+        """
+
+        self.yandex_api_key = yandex_api_key
+        self.yandex_model_uri = yandex_model_uri
+
+    @abstractmethod
+    def generate(self, messages: List[Dict[str, Any]], temperature: float,
+                 max_tokens: int, stream: bool) -> str:
+        """
+        Абстрактный метод генерации текста.
+
+        Args:
+            messages (List[Dict[str, Any]]): Список сообщений для модели.
+            temperature (float, optional): Параметр "температуры" для креативности ответа.
+            max_tokens (int, optional): Максимальное количество токенов в ответе.
+            stream (bool, optional): Если True, позволяет получать ответ потоково.
+        Returns:
+            str: Сгенерированный текст.
+        """
+
+        pass
+
+class YandexLLM(YandexBase):
     """
     Класс для работы с Yandex LLM через API.
 
@@ -27,6 +65,7 @@ class YandexLLM:
                 По умолчанию берется из переменной окружения YANDEX_URI.
         """
 
+        super().__init__(yandex_api_key, yandex_model_uri)
         self.yandex_api_key = yandex_api_key
         self.yandex_model_uri = yandex_model_uri
         self.yandex_url = os.getenv("YANDEX_URL")
@@ -64,7 +103,7 @@ class YandexLLM:
         response.raise_for_status()
         return response.json()
 
-def generate_and_print_projects(client: YandexLLM, ai_ideas: List[str]) -> None:
+def generate_and_print_projects(client: YandexBase, ai_ideas: List[str]) -> None:
     """
     Функция для генерации развернутых технических описаний AI-проектов
     и красивого вывода в консоль.

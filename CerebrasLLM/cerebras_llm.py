@@ -96,9 +96,9 @@ def pretty_print_projects(text: str) -> None:
         if not proj_text or proj_text == f"ИДЕЯ {proj_num}:":
             continue
 
-        print("\n" + "="*70)
+        print("\n" + "="*60)
         print(f"Проект #{proj_num}")
-        print("="*70 + "\n")
+        print("="*60 + "\n")
 
         start = 0
         for j, header in enumerate(sections):
