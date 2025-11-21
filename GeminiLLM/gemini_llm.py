@@ -233,6 +233,11 @@ def generate_ai_ideas(model: LLMBase, count: int = 10) -> List[str]:
     return ideas[:count]
 
 if __name__ == "__main__":
+    """
+    Пример использования GeminiLLM для генерации 10 AI-проектов
+    с развернутым техническим описанием и выводом в консоль.
+    """
+
     gemini_api_key = os.getenv("GEMINI_API_KEY")
     gemini_model = GeminiLLM(api_key=gemini_api_key)
 

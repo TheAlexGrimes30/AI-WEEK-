@@ -6,7 +6,24 @@ import re
 load_dotenv()
 
 class CerebrasLLM:
+    """
+    Класс для работы с LLM от Cerebras через облачный API.
+
+    Attributes:
+        api_key (str): API-ключ для доступа к Cerebras.
+        model (str): Используемая модель LLM.
+        client (Cerebras): Клиент Cerebras SDK для взаимодействия с API.
+    """
+
     def __init__(self, api_key: str = None, model: str = "llama-3.3-70b"):
+        """
+        Инициализация клиента Cerebras LLM.
+
+        Args:
+            api_key (str, optional): API-ключ. Если не указан, берется из переменных окружения.
+            model (str, optional): Модель для генерации текста. Defaults to "llama-3.3-70b".
+        """
+
         self.api_key = api_key or os.getenv("CEREBRAS_API_KEY")
         self.model = model
         self.client = Cerebras(api_key=self.api_key)
@@ -16,6 +33,19 @@ class CerebrasLLM:
                  temperature: float = 0.4,
                  top_p: float = 1.0,
                  stream: bool = True) -> str:
+        """
+        Генерация текста с помощью модели Cerebras.
+
+        Args:
+            prompt (str): Текст запроса для модели.
+            max_tokens (int, optional): Максимальное количество токенов в ответе. Defaults to 8000.
+            temperature (float, optional): Параметр креативности генерации. Defaults to 0.4.
+            top_p (float, optional): Параметр сэмплирования. Defaults to 1.0.
+            stream (bool, optional): Если True, возвращает текст по частям (streaming). Defaults to True.
+
+        Returns:
+            str: Сгенерированный текст.
+        """
 
         completion = self.client.chat.completions.create(
             messages=[{"role": "user", "content": prompt}],
@@ -36,7 +66,17 @@ class CerebrasLLM:
         else:
             return completion.choices[0].message.content
 
-def pretty_print_projects(text: str):
+def pretty_print_projects(text: str) -> None:
+    """
+    Красивый вывод проектов с разделами, учитывая только нумерацию от 1 до 10.
+
+    Args:
+        text (str): Текст с идеями и техническими описаниями проектов.
+
+    Returns:
+        None
+    """
+
     sections = [
         "Техническое описание:",
         "Необходимые технологии и библиотеки:",
@@ -77,6 +117,11 @@ def pretty_print_projects(text: str):
 
 
 if __name__ == "__main__":
+    """
+    Пример использования CerebrasLLM для генерации 10 AI-проектов
+    с развернутым техническим описанием и выводом в консоль.
+    """
+
     llm = CerebrasLLM()
 
     prompt = (

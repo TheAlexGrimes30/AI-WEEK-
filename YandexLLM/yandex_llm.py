@@ -123,6 +123,11 @@ def generate_and_print_projects(client: YandexLLM, ai_ideas: List[str]) -> None:
 
 
 if __name__ == "__main__":
+    """
+    Пример использования YandexLLM для генерации 10 AI-проектов
+    с развернутым техническим описанием и выводом в консоль.
+    """
+
     yandex_api_key = os.getenv("YANDEX_API_KEY")
     client = YandexLLM(yandex_api_key)
 
