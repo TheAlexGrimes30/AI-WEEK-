@@ -8,9 +8,9 @@ import google.genai as genai
 load_dotenv()
 
 
-class LLMBase(ABC):
+class GeminiBase(ABC):
     """
-    Базовый абстрактный класс для всех LLM-провайдеров.
+    Базовый абстрактный класс для всех GeminiLLM.
 
     Атрибуты:
         name (str): Имя модели.
@@ -18,7 +18,7 @@ class LLMBase(ABC):
 
     def __init__(self, name: str):
         """
-        Инициализация базового класса LLM.
+        Инициализация базового класса GeminiLLM.
 
         Args:
             name (str): Имя текущей модели.
@@ -41,9 +41,9 @@ class LLMBase(ABC):
         pass
 
 
-class GeminiLLM(LLMBase):
+class GeminiLLM(GeminiBase):
     """
-    Модель Google Gemini, реализующий интерфейс LLMBase.
+    Модель Google Gemini, реализующий интерфейс GeminiBase.
 
     Атрибуты:
         api_key (str): API-ключ Gemini.
@@ -84,7 +84,7 @@ class GeminiLLM(LLMBase):
 
 MAX_RETRIES = 5
 
-def safe_generate(model: LLMBase, prompt: str):
+def safe_generate(model: GeminiBase, prompt: str):
     """
     Безопасная генерация с повторными попытками при ошибках.
     Используется экспоненциальная задержка.
@@ -107,12 +107,12 @@ def safe_generate(model: LLMBase, prompt: str):
     return None
 
 
-def generate_projects(models: List[LLMBase], ideas: List[str]) -> dict:
+def generate_projects(models: List[GeminiBase], ideas: List[str]) -> dict:
     """
     Генерация технических описаний проектов по списку идей.
 
     Args:
-        models (List[LLMBase]): Список моделей для генерации.
+        models (List[GeminiBase]): Список моделей для генерации.
         ideas (List[str]): Список идей AI-проектов.
 
     Returns:
@@ -176,12 +176,12 @@ def generate_projects(models: List[LLMBase], ideas: List[str]) -> dict:
 
     return results
 
-def generate_ai_ideas(model: LLMBase, count: int = 10) -> List[str]:
+def generate_ai_ideas(model: GeminiBase, count: int = 10) -> List[str]:
     """
     Генерация списка идей AI-проектов.
 
     Args:
-        model (LLMBase): Модель для генерации.
+        model (GeminiBase): Модель для генерации.
         count (int, optional): Количество идей. Defaults to 10.
 
     Returns:
